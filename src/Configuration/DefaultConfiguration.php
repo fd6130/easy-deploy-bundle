@@ -373,7 +373,10 @@ final class DefaultConfiguration extends AbstractConfiguration
         return [Property::bin_dir, Property::config_dir, Property::console_bin, Property::cache_dir, Property::deploy_dir, Property::log_dir, Property::src_dir, Property::templates_dir, Property::web_dir];
     }
 
-    private function setDefaultConfiguration(int $symfonyMajorVersion): self
+    /**
+     * @throws \InvalidArgumentException When provide with unsupported Symfony version
+     */
+    private function setDefaultConfiguration(int $symfonyMajorVersion): void
     {
         if(self::SYMFONY_2 > $symfonyMajorVersion || self::SYMFONY_5 < $symfonyMajorVersion)
         {
@@ -401,8 +404,6 @@ final class DefaultConfiguration extends AbstractConfiguration
             $this->sharedDirs = ['var/log'];
             $this->writableDirs = ['var/cache/', 'var/log/'];
         }
-
-        return $this;
     }
 
     /**
