@@ -21,6 +21,9 @@ but you can pass any stage name as the argument of the deploy/rollback commands:
 # deploy the current application to the "prod" server(s)
 $ ./bin/console deploy
 
+# deploy the given branch or tag application to the "prod" server(s)
+$ ./bin/console deploy --branch-or-tag=main
+
 # deploy the current application to the "staging" server(s)
 $ ./bin/console deploy staging
 
