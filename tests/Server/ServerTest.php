@@ -27,12 +27,11 @@ class ServerTest extends TestCase
         $this->assertSame($expectedPort, $server->getPort());
     }
 
-    /**
-     * @expectedException \EasyCorp\Bundle\EasyDeployBundle\Exception\ServerConfigurationException
-     * @expectedExceptionMessage The host is missing (define it as an IP address or a host name)
-     */
     public function test_dsn_parsing_error()
     {
+        $this->expectException(\EasyCorp\Bundle\EasyDeployBundle\Exception\ServerConfigurationException::class);
+        $this->expectExceptionMessage('The host is missing (define it as an IP address or a host name)');
+
         new Server('deployer@');
     }
 
@@ -115,11 +114,12 @@ class ServerTest extends TestCase
 
     /**
      * @dataProvider wrongExpressionProvider
-     * @expectedException \InvalidArgumentException
-     * @expectedExceptionMessageRegExp /The ".*" property in ".*" expression is not a valid server property./
      */
     public function test_resolve_unknown_properties(array $properties, string $expression)
     {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches('/The ".*" property in ".*" expression is not a valid server property./');
+
         $server = new Server('host', [], $properties);
         $server->resolveProperties($expression);
     }
