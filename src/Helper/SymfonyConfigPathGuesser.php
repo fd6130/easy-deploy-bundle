@@ -22,7 +22,7 @@ class SymfonyConfigPathGuesser
     public static function guess(string $projectDir, string $stage): string
     {
         if (is_dir($configDir = sprintf(self::CONFIG_DIR, $projectDir))) {
-            return sprintf('%s/%s/deploy.php', $configDir, $stage);
+            return sprintf('%s/%s/deployments/deploy.php', $configDir, $stage);
         }
 
         if (is_dir($configDir = sprintf(self::LEGACY_CONFIG_DIR, $projectDir))) {
