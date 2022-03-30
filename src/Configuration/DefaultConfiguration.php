@@ -23,13 +23,8 @@ use Symfony\Component\HttpKernel\Kernel;
  */
 final class DefaultConfiguration extends AbstractConfiguration
 {
-    const SYMFONY_2 = 2;
-    const SYMFONY_3 = 3;
-    const SYMFONY_4 = 4;
-    const SYMFONY_5 = 5;
-
     // variables starting with an underscore are for internal use only
-    private $_symfonyEnvironmentEnvVarName; // SYMFONY_ENV or APP_ENV
+    private $_symfonyEnvironmentEnvVarName; // APP_ENV
 
     // properties are defined as private so the developer doesn't see them when using
     // their IDE autocompletion. To simplify things, the builder defines setter
@@ -378,51 +373,24 @@ final class DefaultConfiguration extends AbstractConfiguration
         return [Property::bin_dir, Property::config_dir, Property::console_bin, Property::cache_dir, Property::log_dir, Property::src_dir, Property::templates_dir, Property::web_dir];
     }
 
-    /**
-     * @throws \InvalidArgumentException When provide with unsupported Symfony version
-     */
     private function setDefaultConfiguration(int $symfonyMajorVersion): void
     {
-        if(self::SYMFONY_2 > $symfonyMajorVersion || self::SYMFONY_5 < $symfonyMajorVersion)
-        {
-            throw new \InvalidArgumentException("%d is not a supported Symfony version.", $symfonyMajorVersion);
-        }
-
         $this->setEnvironmentVarName($symfonyMajorVersion);
 
-        if (self::SYMFONY_2 === $symfonyMajorVersion) {
-            $this->setDirs('app', 'app/config', 'app/cache', 'app/logs', 'src', 'app/Resources/views', 'web');
-            $this->controllersToRemove(['web/app_*.php']);
-            $this->sharedFiles = ['app/config/parameters.yml'];
-            $this->sharedDirs = ['app/logs'];
-            $this->writableDirs = ['app/cache/', 'app/logs/'];
-            $this->dumpAsseticAssets = true;
-        } elseif (self::SYMFONY_3 === $symfonyMajorVersion) {
-            $this->setDirs('bin', 'app/config', 'var/cache', 'var/logs', 'src', 'app/Resources/views', 'web');
-            $this->controllersToRemove(['web/app_*.php']);
-            $this->sharedFiles = ['app/config/parameters.yml'];
-            $this->sharedDirs = ['var/logs'];
-            $this->writableDirs = ['var/cache/', 'var/logs/'];
-        } elseif (self::SYMFONY_4 <= $symfonyMajorVersion) { // support Symfony 4 or above
-            $this->setDirs('bin', 'config', 'var/cache', 'var/log', 'src', 'templates', 'public');
-            $this->controllersToRemove([]);
-            $this->sharedDirs = ['var/log'];
-            $this->writableDirs = ['var/cache/', 'var/log/'];
-        }
+        $this->setDirs('bin', 'config', 'var/cache', 'var/log', 'src', 'templates', 'public');
+        $this->controllersToRemove([]);
+        $this->sharedDirs = ['var/log'];
+        $this->writableDirs = ['var/cache/', 'var/log/'];
     }
 
     /**
-     * Set the name of the environment variable for Symfony depending on the framework version
+     * Set the name of the environment variable for Symfony
      *
      * @param int $symfonyMajorVersion
      */
     private function setEnvironmentVarName(int $symfonyMajorVersion): void
     {
-        if ($symfonyMajorVersion > 3) {
-            $this->_symfonyEnvironmentEnvVarName = 'APP_ENV';
-        } else {
-            $this->_symfonyEnvironmentEnvVarName = 'SYMFONY_ENV';
-        }
+        $this->_symfonyEnvironmentEnvVarName = 'APP_ENV';
     }
 
     private function setDirs(string $binDir, string $configDir, string $cacheDir, string $logDir, string $srcDir, string $templatesDir, string $webDir): void

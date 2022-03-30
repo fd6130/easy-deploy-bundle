@@ -220,17 +220,13 @@ abstract class DefaultDeployer extends AbstractDeployer
     // to Symfony 3 but still use app/console instead of bin/console
     private function findConsoleBinaryPath(Server $server): string
     {
-        $symfonyConsoleBinaries = ['{{ project_dir }}/app/console', '{{ project_dir }}/bin/console'];
-        foreach ($symfonyConsoleBinaries as $consoleBinary) {
-            $localConsoleBinary = $this->getContext()->getLocalHost()->resolveProperties($consoleBinary);
-            if (is_executable($localConsoleBinary)) {
-                return $server->resolveProperties($consoleBinary);
-            }
-        }
+        $symfonyConsoleBinary = '{{ project_dir }}/bin/console';
 
         if (null === $server->get(Property::console_bin)) {
-            throw new InvalidConfigurationException(sprintf('The "console" binary of your Symfony application is not available in any of the following directories: %s. Configure the "binDir" option and set it to the directory that contains the "console" binary.', implode(', ', $symfonyConsoleBinaries)));
+            throw new InvalidConfigurationException(sprintf('The "console" binary of your Symfony application is not available in the following directory: %s. Configure the "binDir" option and set it to the directory that contains the "console" binary.',  $symfonyConsoleBinary));
         }
+
+        return $server->resolveProperties($symfonyConsoleBinary);
     }
 
     private function createRemoteDirectoryLayout(): void
