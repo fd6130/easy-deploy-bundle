@@ -24,7 +24,7 @@ use Symfony\Component\HttpKernel\Kernel;
 final class DefaultConfiguration extends AbstractConfiguration
 {
     // variables starting with an underscore are for internal use only
-    private $_symfonyEnvironmentEnvVarName; // SYMFONY_ENV or APP_ENV
+    private $_symfonyEnvironmentEnvVarName; // APP_ENV
 
     // properties are defined as private so the developer doesn't see them when using
     // their IDE autocompletion. To simplify things, the builder defines setter
@@ -33,6 +33,7 @@ final class DefaultConfiguration extends AbstractConfiguration
     private $keepReleases = 5;
     private $repositoryUrl;
     private $repositoryBranch = 'master';
+    private $passedBranchOrTag = false;
     private $remotePhpBinaryPath = 'php';
     private $updateRemoteComposerBinary = false;
     private $remoteComposerBinaryPath = '/usr/local/bin/composer';
@@ -61,11 +62,16 @@ final class DefaultConfiguration extends AbstractConfiguration
     private $sharedDirs = [];
     private $resetOpCacheFor;
 
-    public function __construct(string $localProjectDir)
+    public function __construct(string $localProjectDir, ?string $branchOrTag = null)
     {
         parent::__construct();
         $this->localProjectDir = $localProjectDir;
-        $this->setDefaultConfiguration(Kernel::MAJOR_VERSION, Kernel::MINOR_VERSION);
+        $this->setDefaultConfiguration(Kernel::MAJOR_VERSION);
+        
+        if (!empty($branchOrTag)) {
+            $this->repositoryBranch = $branchOrTag;
+            $this->passedBranchOrTag = true;
+        }
     }
 
     // this proxy method is needed because the autocompletion breaks
@@ -122,7 +128,9 @@ final class DefaultConfiguration extends AbstractConfiguration
 
     public function repositoryBranch(string $branchName): self
     {
-        $this->repositoryBranch = $branchName;
+        if (false === $this->passedBranchOrTag) {
+            $this->repositoryBranch = $branchName;
+        }
 
         return $this;
     }
@@ -275,6 +283,10 @@ final class DefaultConfiguration extends AbstractConfiguration
 
         $localRelativePaths = array_map(function ($absolutePath) {
             $relativePath = str_replace($this->localProjectDir, '', $absolutePath);
+            if (Str::startsWith($absolutePath, $this->localProjectDir)) {
+                $relativePath = mb_substr($absolutePath, mb_strlen($this->localProjectDir));
+            }
+            
             $this->validatePathIsRelativeToProject($relativePath, 'controllersToRemove');
 
             return trim($relativePath, DIRECTORY_SEPARATOR);
@@ -331,9 +343,6 @@ final class DefaultConfiguration extends AbstractConfiguration
     // Relative to the project root directory
     public function sharedFilesAndDirs(array $paths = []): self
     {
-        $this->sharedDirs = [];
-        $this->sharedFiles = [];
-
         foreach ($paths as $path) {
             $this->validatePathIsRelativeToProject($path, __METHOD__);
             if (is_dir($this->localProjectDir.DIRECTORY_SEPARATOR.$path)) {
@@ -361,33 +370,27 @@ final class DefaultConfiguration extends AbstractConfiguration
 
     protected function getReservedServerProperties(): array
     {
-        return [Property::bin_dir, Property::config_dir, Property::console_bin, Property::cache_dir, Property::deploy_dir, Property::log_dir, Property::src_dir, Property::templates_dir, Property::web_dir];
+        return [Property::bin_dir, Property::config_dir, Property::console_bin, Property::cache_dir, Property::log_dir, Property::src_dir, Property::templates_dir, Property::web_dir];
     }
 
-    private function setDefaultConfiguration(int $symfonyMajorVersion, $symfonyMinorVersion): void
+    private function setDefaultConfiguration(int $symfonyMajorVersion): void
     {
-        if (2 === $symfonyMajorVersion) {
-            $this->_symfonyEnvironmentEnvVarName = 'SYMFONY_ENV';
-            $this->setDirs('app', 'app/config', 'app/cache', 'app/logs', 'src', 'app/Resources/views', 'web');
-            $this->controllersToRemove(['web/app_*.php']);
-            $this->sharedFiles = ['app/config/parameters.yml'];
-            $this->sharedDirs = ['app/logs'];
-            $this->writableDirs = ['app/cache/', 'app/logs/'];
-            $this->dumpAsseticAssets = true;
-        } elseif (3 === $symfonyMajorVersion && 4 < $symfonyMinorVersion) {
-            $this->_symfonyEnvironmentEnvVarName = 'SYMFONY_ENV';
-            $this->setDirs('bin', 'app/config', 'var/cache', 'var/logs', 'src', 'app/Resources/views', 'web');
-            $this->controllersToRemove(['web/app_*.php']);
-            $this->sharedFiles = ['app/config/parameters.yml'];
-            $this->sharedDirs = ['var/logs'];
-            $this->writableDirs = ['var/cache/', 'var/logs/'];
-        } elseif (4 <= $symfonyMajorVersion || (3 === $symfonyMajorVersion && 4 >= $symfonyMinorVersion)) {
-            $this->_symfonyEnvironmentEnvVarName = 'APP_ENV';
-            $this->setDirs('bin', 'config', 'var/cache', 'var/log', 'src', 'templates', 'public');
-            $this->controllersToRemove([]);
-            $this->sharedDirs = ['var/log'];
-            $this->writableDirs = ['var/cache/', 'var/log/'];
-        }
+        $this->setEnvironmentVarName($symfonyMajorVersion);
+
+        $this->setDirs('bin', 'config', 'var/cache', 'var/log', 'src', 'templates', 'public');
+        $this->controllersToRemove([]);
+        $this->sharedDirs = ['var/log'];
+        $this->writableDirs = ['var/cache/', 'var/log/'];
+    }
+
+    /**
+     * Set the name of the environment variable for Symfony
+     *
+     * @param int $symfonyMajorVersion
+     */
+    private function setEnvironmentVarName(int $symfonyMajorVersion): void
+    {
+        $this->_symfonyEnvironmentEnvVarName = 'APP_ENV';
     }
 
     private function setDirs(string $binDir, string $configDir, string $cacheDir, string $logDir, string $srcDir, string $templatesDir, string $webDir): void

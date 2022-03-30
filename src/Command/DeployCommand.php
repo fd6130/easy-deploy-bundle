@@ -45,6 +45,7 @@ class DeployCommand extends Command
             ->setDescription('Deploys a Symfony application to one or more remote servers.')
             ->setHelp('...')
             ->addArgument('stage', InputArgument::OPTIONAL, 'The stage to deploy to ("production", "staging", etc.)', 'prod')
+            ->addArgument('branch-or-tag', InputArgument::OPTIONAL, 'Branch or tag you would like checked out')
             ->addOption('configuration', 'c', InputOption::VALUE_REQUIRED, 'Load configuration from the given file path')
             ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Shows the commands to perform the deployment without actually executing them')
         ;
@@ -69,10 +70,10 @@ class DeployCommand extends Command
         $this->createDefaultConfigFile($input, $output, $defaultConfigPath, $input->getArgument('stage'));
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $logFilePath = sprintf('%s/deploy_%s.log', $this->logDir, $input->getArgument('stage'));
-        $context = new Context($input, $output, $this->projectDir, $logFilePath, true === $input->getOption('dry-run'), $output->isVerbose());
+        $context = new Context($input, $output, $this->projectDir, $logFilePath, true === $input->getOption('dry-run'), $output->isVerbose(), $this->getHelperSet());
 
         $deployer = include $this->configFilePath;
         $deployer->initialize($context);

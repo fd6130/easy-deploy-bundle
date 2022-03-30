@@ -9,14 +9,14 @@ EasyDeployBundle
   * Zero configuration files. No YAML. No XML. No JSON. Just pure PHP awesomeness.
   * Multi-server and multi-stage deployment (e.g. "production", "staging", "qa").
   * Zero downtime deployments.
-  * Supports Symfony 2.7+, Symfony 3.x and Symfony 4.x applications.
+  * Supports Symfony 5.x and 6.x applications.
   * Compatible with GitHub, BitBucket, GitLab and your own Git servers.
 
 ### Requirements
 
-  * Your local machine: PHP 7.1 or higher and a SSH client.
+  * Your local machine: PHP 7.4 or higher and a SSH client.
   * Your remote servers: they allow SSH connections from the local machine.
-  * Your application: it can use any version of Symfony (2.7+, 3.x, 4.x).
+  * Your application: Symfony (5.x, 6.x).
 
 ### Documentation
 

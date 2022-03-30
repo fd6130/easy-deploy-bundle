@@ -35,6 +35,8 @@ abstract class AbstractDeployer
     /** @var ConfigurationAdapter */
     private $config;
 
+    protected $branchOrTag;
+
     abstract public function getRequirements(): array;
 
     abstract public function deploy();
@@ -132,6 +134,7 @@ abstract class AbstractDeployer
     public function initialize(Context $context): void
     {
         $this->context = $context;
+        $this->branchOrTag = $context->getInput()->getArgument('branch-or-tag');
         $this->logger = new Logger($context);
         $this->taskRunner = new TaskRunner($this->context->isDryRun(), $this->logger);
         $this->log('<h1>Initializing configuration</>');
@@ -169,6 +172,11 @@ abstract class AbstractDeployer
         return $this->taskRunner->run($task)[0];
     }
 
+    final protected function getBranchOrTag(): ?string
+    {
+        return $this->branchOrTag;
+    }
+
     /**
      * @return TaskCompleted[]
      */
@@ -203,6 +211,8 @@ abstract class AbstractDeployer
 
         if (empty($pathsToDelete)) {
             $this->log('There are no paths to delete.');
+
+            return;
         }
 
         $this->runOnServer(sprintf('rm -rf %s', implode(' ', $pathsToDelete)), $server);

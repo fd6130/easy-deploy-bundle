@@ -27,7 +27,7 @@ abstract class DefaultDeployer extends AbstractDeployer
 
     public function getConfigBuilder(): DefaultConfiguration
     {
-        return new DefaultConfiguration($this->getContext()->getLocalProjectRootDir());
+        return new DefaultConfiguration($this->getContext()->getLocalProjectRootDir(), $this->getBranchOrTag());
     }
 
     public function getRequirements(): array
@@ -84,6 +84,8 @@ abstract class DefaultDeployer extends AbstractDeployer
         $this->log('<h1>Publishing app</>');
         $this->doCreateSymlink();
         $this->remoteSymLinkHasBeenCreated = true;
+        $this->log('Executing <hook>afterPublishing</> hook');
+        $this->afterPublishing();
         $this->doResetOpCache();
         $this->doKeepReleases();
     }
@@ -131,6 +133,11 @@ abstract class DefaultDeployer extends AbstractDeployer
     }
 
     public function beforePublishing()
+    {
+        $this->log('<h3>Nothing to execute</>');
+    }
+
+    public function afterPublishing()
     {
         $this->log('<h3>Nothing to execute</>');
     }
@@ -187,7 +194,7 @@ abstract class DefaultDeployer extends AbstractDeployer
         $appServers = $this->getServers()->findByRoles([Server::ROLE_APP]);
         foreach ($appServers as $server) {
             $this->log(sprintf('<h3>Setting the %s property for <server>%s</> server</>', Property::deploy_dir, $server));
-            $server->set(Property::deploy_dir, $this->getConfig(Option::deployDir));
+            $server->set(Property::deploy_dir, $server->get(Property::deploy_dir, $this->getConfig(Option::deployDir)));
         }
     }
 
@@ -213,17 +220,13 @@ abstract class DefaultDeployer extends AbstractDeployer
     // to Symfony 3 but still use app/console instead of bin/console
     private function findConsoleBinaryPath(Server $server): string
     {
-        $symfonyConsoleBinaries = ['{{ project_dir }}/app/console', '{{ project_dir }}/bin/console'];
-        foreach ($symfonyConsoleBinaries as $consoleBinary) {
-            $localConsoleBinary = $this->getContext()->getLocalHost()->resolveProperties($consoleBinary);
-            if (is_executable($localConsoleBinary)) {
-                return $server->resolveProperties($consoleBinary);
-            }
-        }
+        $symfonyConsoleBinary = '{{ project_dir }}/bin/console';
 
         if (null === $server->get(Property::console_bin)) {
-            throw new InvalidConfigurationException(sprintf('The "console" binary of your Symfony application is not available in any of the following directories: %s. Configure the "binDir" option and set it to the directory that contains the "console" binary.', implode(', ', $symfonyConsoleBinaries)));
+            throw new InvalidConfigurationException(sprintf('The "console" binary of your Symfony application is not available in the following directory: %s. Configure the "binDir" option and set it to the directory that contains the "console" binary.',  $symfonyConsoleBinary));
         }
+
+        return $server->resolveProperties($symfonyConsoleBinary);
     }
 
     private function createRemoteDirectoryLayout(): void
@@ -245,6 +248,11 @@ abstract class DefaultDeployer extends AbstractDeployer
         $this->log('<h2>Getting the revision ID of the code repository</>');
         $result = $this->runLocal(sprintf('git ls-remote %s %s', $this->getConfig(Option::repositoryUrl), $this->getConfig(Option::repositoryBranch)));
         $revision = explode("\t", $result->getTrimmedOutput())[0];
+
+        if (empty($revision)) {
+            throw new InvalidConfigurationException(sprintf('No revisions found for %s', $this->getConfig(Option::repositoryBranch)));
+        }
+        
         if ($this->getContext()->isDryRun()) {
             $revision = '(the code revision)';
         }
@@ -337,11 +345,24 @@ abstract class DefaultDeployer extends AbstractDeployer
     {
         if (true === $this->getConfig(Option::updateRemoteComposerBinary)) {
             $this->log('<h2>Self Updating the Composer binary</>');
-            $this->runRemote(sprintf('%s self-update', $this->getConfig(Option::remoteComposerBinaryPath)));
+            $this->runRemote(
+                sprintf(
+                    '%s %s self-update',
+                    $this->getConfig(Option::remotePhpBinaryPath),
+                    $this->getConfig(Option::remoteComposerBinaryPath)
+                )
+            );
         }
 
         $this->log('<h2>Installing Composer dependencies</>');
-        $this->runRemote(sprintf('%s install %s', $this->getConfig(Option::remoteComposerBinaryPath), $this->getConfig(Option::composerInstallFlags)));
+        $this->runRemote(
+            sprintf(
+                '%s %s install %s',
+                $this->getConfig(Option::remotePhpBinaryPath),
+                $this->getConfig(Option::remoteComposerBinaryPath),
+                $this->getConfig(Option::composerInstallFlags)
+            )
+        );
     }
 
     private function doInstallWebAssets(): void
@@ -390,7 +411,14 @@ abstract class DefaultDeployer extends AbstractDeployer
     private function doOptimizeComposer(): void
     {
         $this->log('<h2>Optimizing Composer autoloader</>');
-        $this->runRemote(sprintf('%s dump-autoload %s', $this->getConfig(Option::remoteComposerBinaryPath), $this->getConfig(Option::composerOptimizeFlags)));
+        $this->runRemote(
+            sprintf(
+                '%s %s dump-autoload %s',
+                $this->getConfig(Option::remotePhpBinaryPath),
+                $this->getConfig(Option::remoteComposerBinaryPath),
+                $this->getConfig(Option::composerOptimizeFlags)
+            )
+        );
     }
 
     private function doCreateSymlink(): void
