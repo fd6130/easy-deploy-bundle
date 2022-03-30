@@ -32,7 +32,7 @@ class ConfigurationAdapterTest extends TestCase
         ;
     }
 
-    public function test_get_options()
+    public function test_get_options(): void
     {
         $config = new ConfigurationAdapter($this->config);
 

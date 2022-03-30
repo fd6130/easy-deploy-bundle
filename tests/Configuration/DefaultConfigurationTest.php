@@ -19,7 +19,7 @@ class DefaultConfigurationTest extends TestCase
     /**
      * @dataProvider provideHttpRepositoryUrls
      */
-    public function test_repository_url_protocol(string $url)
+    public function test_repository_url_protocol(string $url): void
     {
         $this->expectException(\EasyCorp\Bundle\EasyDeployBundle\Exception\InvalidConfigurationException::class);
         $this->expectExceptionMessageMatches('/The repository URL must use the SSH syntax instead of the HTTPs syntax to make it work on any remote server. Replace "https?:\/\/.*\/symfony\/symfony-demo.git" by "git@.*:symfony\/symfony-demo.git"/');
@@ -29,7 +29,7 @@ class DefaultConfigurationTest extends TestCase
         ;
     }
 
-    public function test_reset_opcache_for()
+    public function test_reset_opcache_for(): void
     {
         $this->expectException(\EasyCorp\Bundle\EasyDeployBundle\Exception\InvalidConfigurationException::class);
         $this->expectExceptionMessage('The value of resetOpCacheFor option must be the valid URL of your homepage (it must start with http:// or https://).');
