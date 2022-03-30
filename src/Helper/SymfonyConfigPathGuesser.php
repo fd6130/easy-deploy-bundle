@@ -21,7 +21,7 @@ class SymfonyConfigPathGuesser
     public static function guess(string $projectDir, string $stage): string
     {
         if (is_dir($configDir = sprintf(self::CONFIG_DIR, $projectDir))) {
-            return sprintf('%s/%s/deploy.php', $configDir, $stage);
+            return sprintf('%s/deployment/%s/deploy.php', $configDir, $stage);
         }
 
         throw new \RuntimeException(sprintf('None of the usual Symfony config dirs exist in the application. Create the dir before continuing: "%s".', self::CONFIG_DIR));
