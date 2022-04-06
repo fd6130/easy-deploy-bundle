@@ -194,7 +194,7 @@ abstract class AbstractDeployer
         return $this->taskRunner->run($task)[0];
     }
 
-    // this method checks that any file or directory that goes into "rm -rf" command is
+    // this method checks that any file or directory that goes into "sudo rm -rf" command is
     // relative to the project dir. This safeguard will prevent catastrophic errors
     // related to removing the wrong file or directory on the server.
     final protected function safeDelete(Server $server, array $absolutePaths): void
@@ -215,7 +215,7 @@ abstract class AbstractDeployer
             return;
         }
 
-        $this->runOnServer(sprintf('rm -rf %s', implode(' ', $pathsToDelete)), $server);
+        $this->runOnServer(sprintf('sudo rm -rf %s', implode(' ', $pathsToDelete)), $server);
     }
 
     private function getCommandEnvVars(): array
