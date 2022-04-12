@@ -86,7 +86,7 @@ abstract class DefaultDeployer extends AbstractDeployer
         $this->remoteSymLinkHasBeenCreated = true;
         $this->log('Executing <hook>afterPublishing</> hook');
         $this->afterPublishing();
-        $this->doResetOpCache();
+        // $this->doResetOpCache();
         $this->doKeepReleases();
     }
 
