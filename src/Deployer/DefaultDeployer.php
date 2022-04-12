@@ -86,7 +86,7 @@ abstract class DefaultDeployer extends AbstractDeployer
         $this->remoteSymLinkHasBeenCreated = true;
         $this->log('Executing <hook>afterPublishing</> hook');
         $this->afterPublishing();
-        // $this->doResetOpCache();
+        $this->doResetOpCache();
         $this->doKeepReleases();
     }
 
@@ -434,8 +434,10 @@ abstract class DefaultDeployer extends AbstractDeployer
         }
 
         $this->log('<h2>Resetting the OPcache contents</>');
-        $phpScriptPath = sprintf('__easy_deploy_opcache_reset_%s.php', bin2hex(random_bytes(8)));
-        $this->runRemote(sprintf('echo "<?php opcache_reset();" > {{ web_dir }}/%s && wget %s/%s && rm -f {{ web_dir }}/%s', $phpScriptPath, $homepageUrl, $phpScriptPath, $phpScriptPath));
+        //$phpScriptPath = sprintf('__easy_deploy_opcache_reset_%s.php', bin2hex(random_bytes(8)));
+        // $this->runRemote(sprintf('echo "<?php opcache_reset();" > {{ web_dir }}/%s && wget %s/%s && rm -f {{ web_dir }}/%s', $phpScriptPath, $homepageUrl, $phpScriptPath, $phpScriptPath));
+        
+        $this->runRemote(sprintf('wget %s', $homepageUrl));
     }
 
     private function doKeepReleases(): void
